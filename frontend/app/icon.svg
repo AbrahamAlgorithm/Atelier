@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Dark rounded background -->
+  <rect width="32" height="32" rx="7" fill="#0f1012"/>
+  <!-- "A" lettermark — two diagonals + crossbar, ivory -->
+  <path d="M16 7L5 26M16 7L27 26M9.5 18.5H22.5" stroke="#faf9f5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Warm brown accent dot — represents the "AI" badge -->
+  <circle cx="24" cy="9" r="2.2" fill="#8B6914"/>
+</svg>

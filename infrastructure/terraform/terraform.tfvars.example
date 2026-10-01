@@ -1,0 +1,17 @@
+aws_region                 = "us-east-1"
+environment                = "prod"
+app_name                   = "atelier"
+s3_bucket_name             = "atelier-uploads"
+db_instance_class          = "db.t4g.micro"
+db_allocated_storage       = 20
+backend_cpu                = 512
+backend_memory             = 1024
+backend_desired_count      = 2
+frontend_cpu               = 256
+frontend_memory            = 512
+frontend_desired_count     = 2
+enable_database_deletion_protection = true
+
+# Sensitive variables - use environment variables or AWS Secrets Manager
+# Set these via: export TF_VAR_db_password="..."
+# Or via: terraform apply -var="db_password=..." 

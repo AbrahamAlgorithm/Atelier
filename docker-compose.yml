@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: atelier-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: atelier
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: atelier-backend
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgres://postgres:password@postgres:5432/atelier?sslmode=disable
+      JWT_SECRET: U6LRsiSgNXfEdGIVzVJtvhyfW5pPLzwMeMqRnFoid6w=
+      JWT_REFRESH_SECRET: dlFWtDx0YwoKoYs5xcyCxNjQwQwpv405BsBMyID5HWg=
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: us-east-1
+      S3_BUCKET: atelier-uploads
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN}
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: atelier-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080/api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

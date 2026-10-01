@@ -1,0 +1,763 @@
+openapi: 3.0.0
+info:
+  title: Atelier API
+  description: AI-powered fashion tool API for Ghost Mannequin, Pattern Generation, and Virtual Try-On
+  version: 1.0.0
+  contact:
+    name: Atelier Support
+    email: support@atelier.ai
+
+servers:
+  - url: https://atelier-backend-179103012566.us-central1.run.app
+    description: Production
+  - url: http://localhost:8080
+    description: Development
+
+paths:
+  /api/v1/auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - name
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  minLength: 8
+                  example: SecurePass123
+                name:
+                  type: string
+                  example: John Doe
+      responses:
+        '200':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request or weak password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Log in user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/forgot-password:
+    post:
+      tags:
+        - Auth
+      summary: Request password reset link
+      description: Send a password reset link to the user's email. Returns 200 regardless of whether the email exists (security best practice).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Reset link sent (or user not found, but response is same for security)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: If that email exists, a reset link has been sent.
+
+  /api/v1/auth/reset-password:
+    post:
+      tags:
+        - Auth
+      summary: Reset password with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - password
+              properties:
+                token:
+                  type: string
+                  description: Reset token from forgot-password email
+                password:
+                  type: string
+                  minLength: 8
+      responses:
+        '200':
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Password updated. Please sign in.
+        '400':
+          description: Invalid or expired token, or weak password
+
+  /api/v1/auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: New tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid or expired refresh token
+
+  /api/v1/auth/logout:
+    delete:
+      tags:
+        - Auth
+      summary: Log out user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Logged out successfully
+      security:
+        - bearerAuth: []
+
+  /api/v1/auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Get current user
+      responses:
+        '200':
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+      security:
+        - bearerAuth: []
+
+  /api/v1/upload/presign:
+    post:
+      tags:
+        - Upload
+      summary: Get presigned URL for direct browser upload to GCS
+      description: Returns a URL that the browser can use to PUT a file directly to Google Cloud Storage for up to 15 minutes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - filename
+                - content_type
+              properties:
+                filename:
+                  type: string
+                  example: dress.jpg
+                content_type:
+                  type: string
+                  example: image/jpeg
+      responses:
+        '200':
+          description: Presigned URL ready for upload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresignResult'
+      security:
+        - bearerAuth: []
+
+  /api/v1/ghost-mannequin/sync:
+    post:
+      tags:
+        - Ghost Mannequin
+      summary: Sync ghost mannequin (immediate response)
+      description: Process a dress image and return result synchronously. For quick feedback without background jobs.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - image_b64
+                - mime_type
+              properties:
+                image_b64:
+                  type: string
+                  description: Base64-encoded image
+                mime_type:
+                  type: string
+                  example: image/jpeg
+      responses:
+        '200':
+          description: Processing complete
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job_id:
+                    type: string
+                    format: uuid
+                  result_url:
+                    type: string
+                    format: uri
+      security:
+        - bearerAuth: []
+
+  /api/v1/jobs/ghost-mannequin:
+    post:
+      tags:
+        - Ghost Mannequin
+      summary: Create ghost mannequin job (background)
+      description: Queue a background job for ghost mannequin processing. Returns immediately with job ID.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dress_url
+              properties:
+                dress_url:
+                  type: string
+                  format: uri
+                  description: GCS URL of dress image (from presigned upload)
+      responses:
+        '200':
+          description: Job queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+      security:
+        - bearerAuth: []
+
+  /api/v1/pattern-generator/sync:
+    post:
+      tags:
+        - Pattern Generator
+      summary: Sync pattern generator (immediate response)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - image_b64
+                - mime_type
+              properties:
+                image_b64:
+                  type: string
+                mime_type:
+                  type: string
+      responses:
+        '200':
+          description: Pattern generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job_id:
+                    type: string
+                    format: uuid
+                  result_url:
+                    type: string
+      security:
+        - bearerAuth: []
+
+  /api/v1/jobs/pattern-generator:
+    post:
+      tags:
+        - Pattern Generator
+      summary: Create pattern generator job (background)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dress_url
+              properties:
+                dress_url:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: Job queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+      security:
+        - bearerAuth: []
+
+  /api/v1/virtual-tryon/sync:
+    post:
+      tags:
+        - Virtual Try-On
+      summary: Sync virtual try-on (immediate response)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dress_b64
+                - dress_mime
+                - person_b64
+                - person_mime
+              properties:
+                dress_b64:
+                  type: string
+                dress_mime:
+                  type: string
+                person_b64:
+                  type: string
+                person_mime:
+                  type: string
+      responses:
+        '200':
+          description: Try-on result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job_id:
+                    type: string
+                  result_url:
+                    type: string
+      security:
+        - bearerAuth: []
+
+  /api/v1/jobs/virtual-tryon:
+    post:
+      tags:
+        - Virtual Try-On
+      summary: Create virtual try-on job (background)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dress_url
+                - person_url
+              properties:
+                dress_url:
+                  type: string
+                  format: uri
+                person_url:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: Job queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+      security:
+        - bearerAuth: []
+
+  /api/v1/jobs:
+    get:
+      tags:
+        - Jobs
+      summary: List all user jobs
+      responses:
+        '200':
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Job'
+      security:
+        - bearerAuth: []
+
+  /api/v1/jobs/{id}:
+    get:
+      tags:
+        - Jobs
+      summary: Get job details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Job details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '404':
+          description: Job not found
+      security:
+        - bearerAuth: []
+
+    delete:
+      tags:
+        - Jobs
+      summary: Delete a job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Job deleted
+      security:
+        - bearerAuth: []
+
+  /api/v1/jobs/{id}/download:
+    get:
+      tags:
+        - Jobs
+      summary: Get download URL for job result
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Download URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  download_url:
+                    type: string
+                    format: uri
+      security:
+        - bearerAuth: []
+
+  /api/v1/projects:
+    post:
+      tags:
+        - Projects
+      summary: Create project from job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - job_id
+                - name
+              properties:
+                job_id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                thumbnail_url:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+      security:
+        - bearerAuth: []
+
+    get:
+      tags:
+        - Projects
+      summary: List user projects
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+      security:
+        - bearerAuth: []
+
+  /api/v1/projects/{id}:
+    get:
+      tags:
+        - Projects
+      summary: Get project details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+      security:
+        - bearerAuth: []
+
+    delete:
+      tags:
+        - Projects
+      summary: Delete project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Project deleted
+      security:
+        - bearerAuth: []
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+components:
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: JWT token for API requests (15 min expiry)
+        refresh_token:
+          type: string
+          description: Token to refresh access token (30 day expiry)
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        avatar_url:
+          type: string
+          format: uri
+        created_at:
+          type: string
+          format: date-time
+
+    PresignResult:
+      type: object
+      properties:
+        upload_url:
+          type: string
+          format: uri
+          description: URL for browser to PUT file to (valid 15 min)
+        file_url:
+          type: string
+          format: uri
+          description: Public URL after upload completes
+        key:
+          type: string
+          description: GCS object key
+
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            - ghost-mannequin
+            - pattern-generator
+            - virtual-tryon
+        status:
+          type: string
+          enum:
+            - pending
+            - processing
+            - completed
+            - failed
+        input_files:
+          type: object
+        output_files:
+          type: object
+          properties:
+            result_url:
+              type: string
+              format: uri
+        error_msg:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        job_id:
+          type: string
+          format: uuid
+        thumbnail_url:
+          type: string
+          format: uri
+        created_at:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT access token from login/register response.
+        Include in Authorization header: Authorization: Bearer <token>

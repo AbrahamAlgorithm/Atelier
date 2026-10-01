@@ -1,0 +1,162 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Augen Pro Color System ────────────────────────────────────── */
+  --color-midnight-ink: #0f1012;
+  --color-ghost-white: #f2f2f4;
+  --color-canvas: #fdfdfd;
+  --color-skyline-gray: #868788;
+  --color-slate-comment: #8f8f8f;
+  --color-deep-graphite: #020201;
+  --color-future-blue: #0071e3;
+
+  /* Atelier brand */
+  --color-ivory: #faf9f5;
+  --color-warm-brown: #8B6914;
+  --color-brown-light: #C4A882;
+  --color-brown-muted: #e8ddd0;
+
+  /* ── Typography ────────────────────────────────────────────────── */
+  --font-sans: 'PP Neue Montreal', Inter, ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* ── Spacing ───────────────────────────────────────────────────── */
+  --spacing-section: 94px;
+  --spacing-element: 6px;
+
+  /* ── Border Radius ─────────────────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 10px;
+  --radius-pill: 26px;
+  --radius-full: 54px;
+}
+
+@theme inline {
+  /* Display serif, loaded via next/font in app/layout.tsx */
+  --font-serif: var(--font-newsreader), 'Iowan Old Style', Georgia, serif;
+}
+
+/* ── Base ──────────────────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+html {
+  font-family: 'PP Neue Montreal', Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background-color: #faf9f5;
+  color: #0f1012;
+}
+
+body {
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 350;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #e8ddd0;
+  border-radius: 99px;
+}
+
+/* ── Upload zone ───────────────────────────────────────────────────── */
+.upload-zone {
+  border: 1.5px dashed #e8ddd0;
+  border-radius: 10px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.upload-zone:hover,
+.upload-zone.dragging {
+  border-color: #8B6914;
+  background-color: rgba(139, 105, 20, 0.03);
+}
+
+/* ── Mobile safe areas ─────────────────────────────────────────────── */
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* ── Animations ────────────────────────────────────────────────────── */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float { animation: float 3s ease-in-out infinite; }
+
+/* ── Landing hero ──────────────────────────────────────────────────── */
+/* Animations use the individual `translate`/`scale` properties so entry and
+   idle drift can run together on one element. Delays come from --d. */
+@keyframes hero-rise { from { opacity: 0; translate: 0 16px; } }
+@keyframes hero-fade { from { opacity: 0; } }
+@keyframes hero-phone { from { opacity: 0; translate: 0 64px; } }
+@keyframes hero-pop { from { opacity: 0; scale: 0.9; } }
+@keyframes hero-drift { 50% { translate: 0 -7px; } }
+@keyframes bar-grow { from { scale: 1 0; } }
+@keyframes hero-scan {
+  from { translate: 0 -100%; }
+  80% { opacity: 1; }
+  to { translate: 0 -30%; opacity: 0; }
+}
+@keyframes marquee { to { translate: -50% 0; } }
+
+.hero-rise { animation: hero-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0ms) both; }
+.hero-fade { animation: hero-fade 1.4s ease-out 200ms both; }
+.hero-phone { animation: hero-phone 1.1s cubic-bezier(0.16, 1, 0.3, 1) 280ms both; }
+.hero-card {
+  animation:
+    hero-pop 0.8s cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0ms) both,
+    hero-drift var(--float, 7s) ease-in-out calc(var(--d, 0ms) + 0.8s) infinite;
+}
+.bar-grow { transform-origin: bottom; animation: bar-grow 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.hero-scan { animation: hero-scan 1.8s cubic-bezier(0.45, 0, 0.25, 1) 1.1s both; }
+.marquee-track { animation: marquee 45s linear infinite; }
+.marquee-track:hover { animation-play-state: paused; }
+
+/* Hero visual scale (md+). Width steps keep the 1180px composition inside the
+   viewport; height steps size it so headline → visual fills one screen. Later
+   rules win, and each height step only applies at widths whose own step is
+   larger — so the result is always the smaller of the two. */
+@media (min-width: 768px)  { .hero-stage { zoom: 0.64; } }
+@media (min-width: 900px)  { .hero-stage { zoom: 0.74; } }
+@media (min-width: 1024px) { .hero-stage { zoom: 0.86; } }
+@media (min-width: 1280px) { .hero-stage { zoom: 1; } }
+@media (min-width: 1440px) { .hero-stage { zoom: 1.12; } }
+@media (min-width: 1600px) { .hero-stage { zoom: 1.2; } }
+@media (min-width: 1680px) { .hero-stage { zoom: 1.28; } }
+@media (min-width: 1680px) and (max-height: 989px) { .hero-stage { zoom: 1.2; } }
+@media (min-width: 1440px) and (max-height: 939px) { .hero-stage { zoom: 1.1; } }
+@media (min-width: 1440px) and (max-height: 899px) { .hero-stage { zoom: 1; } }
+@media (min-width: 1280px) and (max-height: 859px) { .hero-stage { zoom: 0.92; } }
+@media (min-width: 1024px) and (max-height: 819px) { .hero-stage { zoom: 0.85; } }
+@media (min-width: 1024px) and (max-height: 779px) { .hero-stage { zoom: 0.78; } }
+@media (min-width: 900px)  and (max-height: 739px) { .hero-stage { zoom: 0.7; } }
+@media (min-width: 900px)  and (max-height: 699px) { .hero-stage { zoom: 0.64; } }
+
+/* Stretch the hero to the screen (minus the 72px nav) only where the steps above
+   leave ≤ 48px under the visual — the spacer in Hero.tsx absorbs it. On taller
+   screens the next section shows below the visual instead of an empty band. */
+@media (min-width: 1024px) and (max-height: 839px),
+       (min-width: 1280px) and (max-height: 901px),
+       (min-width: 1440px) and (max-height: 955px),
+       (min-width: 1600px) and (max-height: 991px),
+       (min-width: 1680px) and (max-height: 1026px) {
+  .hero-fill { min-height: calc(100svh - 72px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-rise, .hero-fade, .hero-phone, .hero-card, .bar-grow, .marquee-track { animation: none; }
+  .hero-scan { display: none; }
+}
