@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import { Check, Download, Ghost, Heart, MessageCircle, Send, Star } from 'lucide-react'
+import { Check, Download, Ghost, Heart, MessageCircle, Send } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { AtelierMark } from './AtelierMark'
 import { PatternPieces } from './PatternPieces'
@@ -99,12 +99,11 @@ export function HeroVisual() {
             </div>
           </Float>
 
-          {/* ── Rating pill ── */}
+          {/* ── What Ghost Mannequin did to the shot above ── */}
           <Float className="hidden md:block z-20 md:left-[calc(50%-292px)] md:top-[234px] [--d:760ms] [--float:6.5s]">
-            <div className="flex items-center gap-1 rounded-full bg-[#f6c9ee] px-3.5 py-2 text-[#0f1012]">
-              {Array.from({ length: 5 }, (_, i) => (
-                <Star key={i} size={15} className="fill-current" />
-              ))}
+            <div className="flex items-center gap-1.5 rounded-full bg-[#f6c9ee] px-3.5 py-2 text-[13px] font-[500] tracking-[-0.01em] text-[#0f1012]">
+              <Check size={14} strokeWidth={2.5} />
+              Model removed
             </div>
           </Float>
 

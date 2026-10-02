@@ -14,7 +14,6 @@ const toolLinks = [
 
 const links = [
   { href: '#how-it-works', label: 'How It Works' },
-  { href: '#stories', label: 'Stories' },
   { href: '#faq', label: 'FAQ' },
 ]
 
@@ -249,7 +248,7 @@ export function SiteNav() {
 
           <div
             className={cn('shrink-0 px-4 sm:px-6 pt-4 pb-[max(20px,env(safe-area-inset-bottom))] border-t border-[#0f1012]/6', reveal)}
-            style={revealDelay(7)}
+            style={revealDelay(toolLinks.length + links.length + 1)}
           >
             <div className="grid grid-cols-2 gap-2">
               <Link

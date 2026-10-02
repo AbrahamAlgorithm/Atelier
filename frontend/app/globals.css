@@ -160,3 +160,53 @@ h1, h2, h3, h4, h5, h6 {
   .hero-rise, .hero-fade, .hero-phone, .hero-card, .bar-grow, .marquee-track { animation: none; }
   .hero-scan { display: none; }
 }
+
+/* ── Landing sections ──────────────────────────────────────────────── */
+/* Scroll-driven, CSS only. Browsers without scroll timelines skip the motion
+   and simply show the content. */
+@keyframes reveal-up { from { opacity: 0; translate: 0 32px; } }
+@keyframes draw-in { from { stroke-dashoffset: 1; fill-opacity: 0; } }
+@keyframes grow-x { from { clip-path: inset(0 100% 0 0 round 999px); } }
+@keyframes scan-loop {
+  0% { translate: 0 -100%; }
+  70%, 100% { translate: 0 120%; }
+}
+
+@supports (animation-timeline: view()) {
+  .reveal {
+    animation: reveal-up linear both;
+    animation-timeline: view();
+    animation-range: entry 0px entry 260px;
+  }
+  /* Pattern pieces trace themselves as the sheet scrolls into view */
+  .draw-in { view-timeline-name: --draw; }
+  .draw-in .draw {
+    stroke-dasharray: 1;
+    animation: draw-in linear both;
+    animation-timeline: --draw;
+    animation-range: entry 20% cover 55%;
+  }
+  .grow-x {
+    animation: grow-x linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 30%;
+  }
+}
+
+.scan-loop { animation: scan-loop 3.2s cubic-bezier(0.45, 0, 0.25, 1) infinite; }
+/* Idle float for floating chips and cards outside the hero; period from --float */
+.drift { animation: hero-drift var(--float, 7s) ease-in-out infinite; }
+
+/* <details> accordions open smoothly where ::details-content is supported */
+.faq-item { interpolate-size: allow-keywords; }
+.faq-item::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition: block-size 0.35s cubic-bezier(0.16, 1, 0.3, 1), content-visibility 0.35s allow-discrete;
+}
+.faq-item[open]::details-content { block-size: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .draw-in .draw, .grow-x, .scan-loop, .drift { animation: none; }
+  .faq-item::details-content { transition: none; }
+}
